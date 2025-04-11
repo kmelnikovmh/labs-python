@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="container py-4">
+    <h1 class="mb-4">
+        <i class="fas fa-plus-circle text-primary me-2"></i>Создать новый чек
+    </h1>
+    
+    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Основная информация</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Название чека</label>
+                    <input type="text" class="form-control" name="title" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Изображение чека</label>
+                    <input type="file" class="form-control" name="image">
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-list-ol me-2"></i>Позиции в чеке</h5>
+            </div>
+            <div class="card-body" id="items-container">
+                <div class="item-form mb-3 row g-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="item_name_0" placeholder="Название" required>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="number" min="0" step="1" class="form-control" name="item_price_0" placeholder="Цена" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-danger w-100 remove-item">×</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-outline-primary" id="add-item">
+                    <i class="fas fa-plus me-2"></i>Добавить позицию
+                </button>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Участники</h5>
+            </div>
+            <div class="card-body" id="participants-container">
+                <div class="participant-form mb-3 row g-3">
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" name="participant_name_0" placeholder="Имя участника" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-danger w-100 remove-participant">×</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-outline-primary" id="add-participant">
+                    <i class="fas fa-plus me-2"></i>Добавить участника
+                </button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-save me-2"></i>Сохранить чек
+        </button>
+    </form>
+</main>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const createField = (container, templateSelector, inputNames) => {
+        const template = container.querySelector(templateSelector);
+        const newField = template.cloneNode(true);
+        const index = container.children.length;
+
+        inputNames.forEach(name => {
+            const input = newField.querySelector(`[name^="${name}"]`);
+            input.name = `${name}_${index}`;
+            input.value = '';
+            input.removeAttribute('disabled');
+            
+            if (name === 'item_price') {
+                input.step = 1;
+                input.min = 0;
+                input.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.replace(/[.,]/g, '');
+                });
+            }
+        });
+
+        return newField;
+    };
+
+    const setupAdder = (buttonId, containerId, templateSelector, inputNames) => {
+        document.getElementById(buttonId).addEventListener('click', () => {
+            const container = document.getElementById(containerId);
+            const newField = createField(container, templateSelector, inputNames);
+            container.appendChild(newField);
+        });
+    };
+
+    setupAdder('add-item', 'items-container', '.item-form', ['item_name', 'item_price']);
+    setupAdder('add-participant', 'participants-container', '.participant-form', ['participant_name']);
+
+    const handleRemoval = (containerSelector, itemSelector, removeButtonClass, minCount = 1) => {
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains(removeButtonClass)) {
+                const container = document.querySelector(containerSelector);
+                const items = container.querySelectorAll(itemSelector);
+                
+                if (items.length > minCount) {
+                    const itemToRemove = e.target.closest(itemSelector);
+                    if (itemToRemove) {
+                        itemToRemove.remove();
+                    }
+                }
+            }
+        });
+    };
+
+    handleRemoval('#items-container', '.item-form', 'remove-item', 1);
+    handleRemoval('#participants-container', '.participant-form', 'remove-participant', 1);
+});
+</script>
+{% endblock %}
